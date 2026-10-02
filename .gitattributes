@@ -1,0 +1,14 @@
+# Store every text file with LF endings regardless of the machine committing it.
+# Without this the result depends on each clone's core.autocrlf, and the same
+# file can show up as fully rewritten in a diff.
+* text=auto eol=lf
+
+# Capture files and model artifacts are binary. Line ending conversion would
+# corrupt the bytes, so mark them explicitly.
+*.pcap binary
+*.pcapng binary
+*.parquet binary
+*.keras binary
+*.joblib binary
+*.npy binary
+*.png binary

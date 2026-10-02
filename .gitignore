@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Captures and intermediate data are too big and too private for the repo
+data/raw/*
+data/interim/*
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+
+# Generated charts
+reports/figures/*
+!reports/figures/.gitkeep
+
+# Editors and OS
+.vscode/
+.idea/
+Thumbs.db

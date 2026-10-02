@@ -1,24 +1,17 @@
-# flowsight
+# Overview
 
-Traffic analytics and anomaly detection for packet captures.
+Welcome to Peruze! A place for traffic analytics and anomaly detection for packet captures.
 
-flowsight reads a capture, rolls the packets up into flows, scores those flows
-with several different detectors, and writes the results out as charts. Captures
-can come from a pcap file, from a live interface, or from the built in synthetic
-generator when you want data that is the same on every run.
+Here we read a capture, roll the packets up into flows, score those flows with several different detectors, and write the results out as charts.
 
-## Why it exists
+## Peruze is a project for perusing network data.
 
-Packet captures are a good excuse to practice a full data workflow end to end:
-awkward input, feature engineering, unsupervised and supervised models, picking a
-threshold that is defensible, and charts someone could actually act on. The repo
-is laid out so each of those concerns sits on its own and can be read without the
-others.
+Packet captures are great for keeping fresh on data skills including feature engineering, unsupervised and supervised models, and building charts to visual key data metrics.
 
 ## Layout
 
 ```
-src/flowsight/
+src/peruze/
   capture/      reading packets from a pcap, a live interface, or the generator
   features/     packets to flows, flows to model ready feature tables
   analytics/    descriptive statistics and time series rollups
@@ -28,12 +21,12 @@ src/flowsight/
 data/raw/       drop .pcap files here, contents are gitignored
 reports/        generated charts land in reports/figures/
 docs/sections/  notes on why each part works the way it does
-tests/          mirrors src/flowsight
+tests/          mirrors src/peruze
 ```
 
 ## Setup
 
-Python 3.13. The version is pinned only because TensorFlow has no 3.14 wheel yet.
+Python 3.13
 
 ```
 py -3.13 -m venv .venv

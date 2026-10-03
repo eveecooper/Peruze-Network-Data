@@ -25,3 +25,6 @@ reports/figures/*
 .vscode/
 .idea/
 Thumbs.db
+
+# Unecessary Files
+docs/roadmap.md

@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "peruze"
+description = "Traffic analytics and anomaly detection for packet captures"
+readme = "README.md"
+# Upper bound is deliberate: TensorFlow publishes no 3.14 wheel yet.
+requires-python = ">=3.13,<3.14"
+dynamic = ["version"]
+dependencies = [
+    "numpy>=2.1",
+    "pandas>=2.2",
+    "pyarrow>=18.0",
+    "scapy>=2.6",
+    "scikit-learn>=1.7",
+    "plotly>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.8",
+]
+# TensorFlow is a large download and only the autoencoder needs it, so it stays
+# out of the default install. detect/autoencoder.py imports it lazily.
+dl = [
+    "tensorflow>=2.20",
+]
+
+[project.scripts]
+peruze = "peruze.cli:main"
+
+[tool.hatch.version]
+path = "src/peruze/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/peruze"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["peruze"]

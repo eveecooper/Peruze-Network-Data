@@ -26,5 +26,6 @@ reports/figures/*
 .idea/
 Thumbs.db
 
-# Unecessary Files
+# Notes for agents and the local build plan, kept off GitHub
 docs/roadmap.md
+AGENTS.md

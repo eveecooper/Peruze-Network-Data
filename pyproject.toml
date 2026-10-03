@@ -48,6 +48,8 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+# Comments are written as one long line rather than stacked hash rows, so the line length cap applies to code through the formatter rather than through the linter.
+ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["peruze"]

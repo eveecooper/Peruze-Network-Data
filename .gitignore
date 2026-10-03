@@ -26,6 +26,6 @@ reports/figures/*
 .idea/
 Thumbs.db
 
-# Notes for agents and the local build plan, kept off GitHub
+# Local planning notes
 docs/roadmap.md
-AGENTS.md
+project_planning.md

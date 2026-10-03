@@ -1,5 +1,6 @@
 """The packet contract is what every capture source promises to return."""
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -132,3 +133,33 @@ def test_validate_frame_rejects_a_narrowed_vocabulary():
 
     with pytest.raises(schema.SchemaError, match="categories"):
         schema.validate_frame(frame)
+
+
+def test_frame_from_columns_matches_frame_from_records():
+    records = [TCP_RECORD, ICMP_RECORD]
+    by_column = schema.frame_from_columns(
+        {name: np.array([record[name] for record in records], dtype=object) for name in schema.DTYPES}
+    )
+
+    pd.testing.assert_frame_equal(by_column, schema.frame_from_records(records))
+
+
+def test_frame_from_columns_fills_an_absent_column():
+    frame = schema.frame_from_columns(
+        {
+            "ts": ["2026-01-01T12:00:00Z"],
+            "src_ip": ["10.0.0.5"],
+            "dst_ip": ["93.184.216.34"],
+            "protocol": ["icmp"],
+            "length": [84],
+        }
+    )
+
+    assert len(frame) == 1
+    assert frame["tcp_flags"].isna().all()
+    assert dtypes_of(frame) == schema.DTYPES
+
+
+def test_frame_from_columns_rejects_a_misspelled_column():
+    with pytest.raises(schema.SchemaError, match="protocal"):
+        schema.frame_from_columns({"protocol": ["tcp"], "protocal": ["tcp"]})

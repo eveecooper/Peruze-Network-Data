@@ -2,7 +2,8 @@
 
 The synthetic generator, the pcap reader, and the live sniffer all return the
 same columns with the same dtypes, so no stage after capture has to guess what
-it was handed. Sources build plain row dicts and call frame_from_records.
+it was handed. Sources build plain row dicts and call frame_from_records, or whole
+columns and call frame_from_columns.
 validate_frame is the gate for a frame that arrived from somewhere else, such
 as a parquet file written by an earlier run.
 """
@@ -59,14 +60,15 @@ def frame_from_records(records: Iterable[Mapping[str, Any]]) -> pd.DataFrame:
     A record may omit a column, which lands as null, but it may not invent one:
     a misspelled key would otherwise become a silently empty column.
     """
-    frame = pd.DataFrame(list(records))
-    _reject_unexpected(frame.columns)
-    frame = frame.reindex(columns=list(DTYPES))
-    for name, vocabulary in VOCABULARIES.items():
-        _reject_unlisted(frame[name], name, vocabulary)
-    for name in DTYPES:
-        frame[name] = frame[name].astype(_cast_target(name))
-    return frame
+    return _conform(pd.DataFrame(list(records)))
+
+
+def frame_from_columns(columns: Mapping[str, Any]) -> pd.DataFrame:
+    """Build a valid packet frame from whole columns of array like values.
+
+    The generators sample a whole column at a time with numpy, and turning those arrays into per row dicts only to hand them straight back to pandas throws that vectorization away. The omission and misspelling rules match frame_from_records.
+    """
+    return _conform(pd.DataFrame(dict(columns)))
 
 
 def validate_frame(frame: pd.DataFrame) -> pd.DataFrame:
@@ -95,6 +97,17 @@ def _dtype_complaint(values: pd.Series, name: str) -> str | None:
     if vocabulary is not None and tuple(dtype.categories) != vocabulary:
         return f"{name} categories are {list(dtype.categories)}, expected {list(vocabulary)}"
     return None
+
+
+def _conform(frame: pd.DataFrame) -> pd.DataFrame:
+    """Fill in absent columns, reject invented ones, and cast everything to the contract."""
+    _reject_unexpected(frame.columns)
+    frame = frame.reindex(columns=list(DTYPES))
+    for name, vocabulary in VOCABULARIES.items():
+        _reject_unlisted(frame[name], name, vocabulary)
+    for name in DTYPES:
+        frame[name] = frame[name].astype(_cast_target(name))
+    return frame
 
 
 def _cast_target(name: str) -> Any:

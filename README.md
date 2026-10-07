@@ -1,6 +1,6 @@
 # Overview
 
-Welcome to Peruze! A place for traffic analytics and anomaly detection for packet captures.
+Welcome to Peruze! A place for traffic analytics and anomaly detection playground for packet captures.
 
 Here we read a capture, roll the packets up into flows, score those flows with several different detectors, and write the results out as charts.
 

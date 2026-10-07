@@ -41,6 +41,8 @@ packages = ["src/peruze"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
+# The suite imports peruze from src rather than from the installed copy, so moving or renaming the checkout cannot leave an editable install pointing at a path that is no longer there.
+pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 100

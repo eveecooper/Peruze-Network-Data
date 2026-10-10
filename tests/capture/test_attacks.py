@@ -1,6 +1,7 @@
 """Interleaving attack rows must leave the baseline intact and keep the frame in time order."""
 
 import pandas as pd
+import pytest
 
 from peruze.capture import attacks, schema, synthetic
 
@@ -61,3 +62,34 @@ def test_a_baseline_packet_sorts_first_at_a_colliding_timestamp():
     frame = attacks.interleave(BASELINE, _attack_rows(collision))
 
     assert list(frame.loc[frame["ts"] == collision, "label"]) == ["benign", "port_scan"]
+
+
+def test_the_window_starts_at_the_offset_into_the_capture():
+    assert attacks.window_start(BASELINE, 10.0, 5.0) == START + pd.Timedelta(seconds=10)
+
+
+def test_a_zero_offset_starts_on_the_first_packet():
+    assert attacks.window_start(BASELINE, 0.0, 5.0) == START
+
+
+def test_a_window_filling_the_rest_of_the_capture_is_accepted():
+    span = (BASELINE["ts"].max() - START).total_seconds()
+
+    assert attacks.window_start(BASELINE, 0.0, span) == START
+
+
+def test_a_window_running_past_the_last_packet_is_rejected():
+    span = (BASELINE["ts"].max() - START).total_seconds()
+
+    with pytest.raises(ValueError, match="after the capture"):
+        attacks.window_start(BASELINE, 0.0, span + 1.0)
+
+
+def test_a_window_starting_before_the_first_packet_is_rejected():
+    with pytest.raises(ValueError, match="before the capture"):
+        attacks.window_start(BASELINE, -1.0, 5.0)
+
+
+def test_an_empty_baseline_has_no_window_to_place():
+    with pytest.raises(ValueError, match="empty"):
+        attacks.window_start(schema.empty_frame(), 10.0, 5.0)

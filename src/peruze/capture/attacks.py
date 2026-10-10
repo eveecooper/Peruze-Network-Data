@@ -24,10 +24,10 @@ def window_start(baseline: pd.DataFrame, offset_s: float, duration_s: float) -> 
         raise ValueError("an empty baseline has no capture window to place an attack in")
     first, last = baseline["ts"].min(), baseline["ts"].max()
     start = first + pd.to_timedelta(offset_s, unit="s")
-    end = start + pd.to_timedelta(duration_s, unit="s")
     # Packets outside the capture window fall outside every rollup and score built from it, so the attack would be invisible rather than undetected.
     if start < first:
         raise ValueError(f"attack starts {start}, before the capture opens at {first}")
+    end = start + pd.to_timedelta(duration_s, unit="s")
     if end > last:
         raise ValueError(f"attack ends {end}, after the capture closes at {last}")
     return start

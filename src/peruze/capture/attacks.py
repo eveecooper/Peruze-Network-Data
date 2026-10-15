@@ -17,7 +17,7 @@ from peruze.capture import schema, synthetic
 def interleave(baseline: pd.DataFrame, attack: pd.DataFrame) -> pd.DataFrame:
     """Place attack rows into a baseline by arrival time, under the packet contract."""
     combined = pd.concat([baseline, attack], ignore_index=True)
-    # Timestamps can collide, and a stable sort puts the baseline packet first at those ties instead of leaving the row order undefined.
+    # stable sort, so a baseline packet comes first at a colliding timestamp.
     return schema.validate_frame(combined.sort_values("ts", kind="stable", ignore_index=True))
 
 
@@ -27,7 +27,7 @@ def window_start(baseline: pd.DataFrame, offset_s: float, duration_s: float) -> 
         raise ValueError("an empty baseline has no capture window to place an attack in")
     first, last = baseline["ts"].min(), baseline["ts"].max()
     start = first + pd.to_timedelta(offset_s, unit="s")
-    # Packets outside the capture window fall outside every rollup and score built from it, so the attack would be invisible rather than undetected.
+    # outside the window the attack misses every rollup, so it reads as invisible, not undetected.
     if start < first:
         raise ValueError(f"attack starts {start}, before the capture opens at {first}")
     end = start + pd.to_timedelta(duration_s, unit="s")
@@ -41,7 +41,7 @@ class PortScanConfig:
     """One external host probing many ports on a single internal target."""
 
     scanner: str = "198.51.100.66"
-    # The target has to be a host the baseline already talks to, otherwise per host rollups show an address carrying attack traffic and nothing else, which is a far easier problem than the real one.
+    # a host the baseline already talks to, or per host rollups show an address with nothing but attack traffic.
     target: str = synthetic.DEFAULT_HOSTS[0]
     # Inclusive bounds, matching the port list a scanner is handed.
     ports: tuple[int, int] = (1, 1024)
@@ -51,10 +51,10 @@ class PortScanConfig:
 
     def __post_init__(self) -> None:
         low, high = self.ports
-        # A scanner is handed a real port range, so the bounds are checked before the count: port 0 is reserved, and a port wider than the field would surface as a failed UInt16 cast rather than a message naming the field.
+        # bounds before count: port 0 is reserved, and anything past the field width fails later as a uint16 cast.
         if not 1 <= low <= high <= 65535:
             raise ValueError(f"ports {low} to {high} must be an ascending range inside 1 to 65535")
-        # One probe per port is what makes a scan a fan out, so a count the range cannot cover without repeats is a misconfiguration rather than something to clamp.
+        # one probe per port, so a count the range cannot cover is a misconfiguration, not something to clamp.
         if not 0 < self.port_count <= high - low + 1:
             raise ValueError(f"cannot probe {self.port_count} distinct ports in {low} to {high}")
 
@@ -62,7 +62,7 @@ class PortScanConfig:
 def probe_ports(config: PortScanConfig) -> np.ndarray:
     """The destination ports a scan touches, one probe each."""
     low, _ = config.ports
-    # A naive sweep walks the range from its low bound, where the well known services sit, so the probed block is contiguous rather than scattered.
+    # sweep from the low bound, where the well known services sit, so the block is contiguous.
     return np.arange(low, low + config.port_count)
 
 

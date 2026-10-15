@@ -6,9 +6,11 @@ keeps their benign labels correct as ground truth when several attacks stack on 
 capture.
 """
 
+from dataclasses import dataclass
+
 import pandas as pd
 
-from peruze.capture import schema
+from peruze.capture import schema, synthetic
 
 
 def interleave(baseline: pd.DataFrame, attack: pd.DataFrame) -> pd.DataFrame:
@@ -31,3 +33,23 @@ def window_start(baseline: pd.DataFrame, offset_s: float, duration_s: float) -> 
     if end > last:
         raise ValueError(f"attack ends {end}, after the capture closes at {last}")
     return start
+
+
+@dataclass(frozen=True)
+class PortScanConfig:
+    """One external host probing many ports on a single internal target."""
+
+    scanner: str = "198.51.100.66"
+    # The target has to be a host the baseline already talks to, otherwise per host rollups show an address carrying attack traffic and nothing else, which is a far easier problem than the real one.
+    target: str = synthetic.DEFAULT_HOSTS[0]
+    # Inclusive bounds, matching the port list a scanner is handed.
+    ports: tuple[int, int] = (1, 1024)
+    port_count: int = 400
+    offset_s: float = 120.0
+    duration_s: float = 30.0
+
+    def __post_init__(self) -> None:
+        low, high = self.ports
+        # One probe per port is what makes a scan a fan out, so a count the range cannot cover without repeats is a misconfiguration rather than something to clamp.
+        if not 0 < self.port_count <= high - low + 1:
+            raise ValueError(f"cannot probe {self.port_count} distinct ports in {low} to {high}")

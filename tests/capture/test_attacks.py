@@ -93,3 +93,8 @@ def test_a_window_starting_before_the_first_packet_is_rejected():
 def test_an_empty_baseline_has_no_window_to_place():
     with pytest.raises(ValueError, match="empty"):
         attacks.window_start(schema.empty_frame(), 10.0, 5.0)
+
+
+def test_probing_more_ports_than_the_range_holds_is_rejected():
+    with pytest.raises(ValueError, match="distinct ports"):
+        attacks.PortScanConfig(ports=(80, 90), port_count=50)

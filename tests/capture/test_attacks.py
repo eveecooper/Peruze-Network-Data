@@ -114,3 +114,18 @@ def test_a_full_range_sweep_covers_both_bounds():
     ports = attacks.probe_ports(attacks.PortScanConfig(ports=(20, 120), port_count=101))
 
     assert (ports.min(), ports.max()) == (20, 120)
+
+
+def test_a_port_range_reaching_past_the_field_width_is_rejected():
+    with pytest.raises(ValueError, match="ascending range"):
+        attacks.PortScanConfig(ports=(65000, 70000), port_count=10)
+
+
+def test_a_port_range_starting_at_the_reserved_port_is_rejected():
+    with pytest.raises(ValueError, match="ascending range"):
+        attacks.PortScanConfig(ports=(0, 100), port_count=10)
+
+
+def test_a_descending_port_range_is_rejected():
+    with pytest.raises(ValueError, match="ascending range"):
+        attacks.PortScanConfig(ports=(900, 80), port_count=10)

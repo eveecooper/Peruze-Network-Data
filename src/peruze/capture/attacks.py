@@ -64,3 +64,10 @@ def probe_ports(config: PortScanConfig) -> np.ndarray:
     low, _ = config.ports
     # A naive sweep walks the range from its low bound, where the well known services sit, so the probed block is contiguous rather than scattered.
     return np.arange(low, low + config.port_count)
+
+
+def probe_times(config: PortScanConfig, start: pd.Timestamp) -> pd.DatetimeIndex:
+    """Probe arrival times across the scan window."""
+    # drop the right edge: gaps stay duration / port_count and the last probe stays inside the window.
+    offsets = np.linspace(0.0, config.duration_s, config.port_count, endpoint=False)
+    return start + pd.to_timedelta(offsets, unit="s")

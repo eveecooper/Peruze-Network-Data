@@ -129,3 +129,22 @@ def test_a_port_range_starting_at_the_reserved_port_is_rejected():
 def test_a_descending_port_range_is_rejected():
     with pytest.raises(ValueError, match="ascending range"):
         attacks.PortScanConfig(ports=(900, 80), port_count=10)
+
+
+def test_a_scan_sends_one_probe_per_port():
+    config = attacks.PortScanConfig(port_count=10, duration_s=5.0)
+
+    assert len(attacks.probe_times(config, START)) == 10
+
+
+def test_the_probes_run_on_an_even_grid_from_the_window_start():
+    times = attacks.probe_times(attacks.PortScanConfig(port_count=4, duration_s=8.0), START)
+
+    assert times[0] == START
+    assert list(times[1:] - times[:-1]) == [pd.Timedelta(seconds=2.0)] * 3
+
+
+def test_the_last_probe_lands_before_the_window_closes():
+    times = attacks.probe_times(attacks.PortScanConfig(port_count=10, duration_s=5.0), START)
+
+    assert times.max() < START + pd.Timedelta(seconds=5.0)

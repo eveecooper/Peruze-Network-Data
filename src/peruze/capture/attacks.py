@@ -8,6 +8,7 @@ capture.
 
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
 from peruze.capture import schema, synthetic
@@ -53,3 +54,10 @@ class PortScanConfig:
         # One probe per port is what makes a scan a fan out, so a count the range cannot cover without repeats is a misconfiguration rather than something to clamp.
         if not 0 < self.port_count <= high - low + 1:
             raise ValueError(f"cannot probe {self.port_count} distinct ports in {low} to {high}")
+
+
+def probe_ports(config: PortScanConfig) -> np.ndarray:
+    """The destination ports a scan touches, one probe each."""
+    low, _ = config.ports
+    # A naive sweep walks the range from its low bound, where the well known services sit, so the probed block is contiguous rather than scattered.
+    return np.arange(low, low + config.port_count)

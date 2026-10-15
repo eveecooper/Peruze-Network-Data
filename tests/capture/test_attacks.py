@@ -98,3 +98,19 @@ def test_an_empty_baseline_has_no_window_to_place():
 def test_probing_more_ports_than_the_range_holds_is_rejected():
     with pytest.raises(ValueError, match="distinct ports"):
         attacks.PortScanConfig(ports=(80, 90), port_count=50)
+
+
+def test_a_scan_probes_the_configured_number_of_ports():
+    assert len(attacks.probe_ports(attacks.PortScanConfig(port_count=12))) == 12
+
+
+def test_every_probed_port_is_distinct():
+    ports = attacks.probe_ports(attacks.PortScanConfig())
+
+    assert len(set(ports.tolist())) == len(ports)
+
+
+def test_a_full_range_sweep_covers_both_bounds():
+    ports = attacks.probe_ports(attacks.PortScanConfig(ports=(20, 120), port_count=101))
+
+    assert (ports.min(), ports.max()) == (20, 120)

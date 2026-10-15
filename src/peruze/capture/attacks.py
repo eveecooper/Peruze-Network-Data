@@ -51,6 +51,9 @@ class PortScanConfig:
 
     def __post_init__(self) -> None:
         low, high = self.ports
+        # A scanner is handed a real port range, so the bounds are checked before the count: port 0 is reserved, and a port wider than the field would surface as a failed UInt16 cast rather than a message naming the field.
+        if not 1 <= low <= high <= 65535:
+            raise ValueError(f"ports {low} to {high} must be an ascending range inside 1 to 65535")
         # One probe per port is what makes a scan a fan out, so a count the range cannot cover without repeats is a misconfiguration rather than something to clamp.
         if not 0 < self.port_count <= high - low + 1:
             raise ValueError(f"cannot probe {self.port_count} distinct ports in {low} to {high}")

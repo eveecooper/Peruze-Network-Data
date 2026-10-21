@@ -148,3 +148,13 @@ def test_the_last_probe_lands_before_the_window_closes():
     times = attacks.probe_times(attacks.PortScanConfig(port_count=10, duration_s=5.0), START)
 
     assert times.max() < START + pd.Timedelta(seconds=5.0)
+
+
+def test_a_source_port_below_the_ephemeral_range_is_rejected():
+    with pytest.raises(ValueError, match="ephemeral"):
+        attacks.PortScanConfig(source_port=1024)
+
+
+def test_a_source_port_past_the_field_width_is_rejected():
+    with pytest.raises(ValueError, match="ephemeral"):
+        attacks.PortScanConfig(source_port=70000)

@@ -46,6 +46,8 @@ class PortScanConfig:
     # Inclusive bounds, matching the port list a scanner is handed.
     ports: tuple[int, int] = (1, 1024)
     port_count: int = 400
+    # one port for the whole sweep, so probes differ only in destination.
+    source_port: int = 50123
     offset_s: float = 120.0
     duration_s: float = 30.0
 
@@ -57,6 +59,9 @@ class PortScanConfig:
         # one probe per port, so a count the range cannot cover is a misconfiguration, not something to clamp.
         if not 0 < self.port_count <= high - low + 1:
             raise ValueError(f"cannot probe {self.port_count} distinct ports in {low} to {high}")
+        # scanners bind an ephemeral port. 49152 is the low bound of the range.
+        if not 49152 <= self.source_port <= 65535:
+            raise ValueError(f"source port {self.source_port} is not ephemeral, 49152 to 65535")
 
 
 def probe_ports(config: PortScanConfig) -> np.ndarray:

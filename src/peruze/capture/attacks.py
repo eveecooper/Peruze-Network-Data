@@ -76,3 +76,21 @@ def probe_times(config: PortScanConfig, start: pd.Timestamp) -> pd.DatetimeIndex
     # drop the right edge: gaps stay duration / port_count and the last probe stays inside the window.
     offsets = np.linspace(0.0, config.duration_s, config.port_count, endpoint=False)
     return start + pd.to_timedelta(offsets, unit="s")
+
+
+def probe_frame(config: PortScanConfig, start: pd.Timestamp) -> pd.DataFrame:
+    """A bare SYN per probed port, ready to interleave into a baseline."""
+    return schema.frame_from_columns(
+        {
+            "ts": probe_times(config, start),
+            "src_ip": config.scanner,
+            "dst_ip": config.target,
+            "src_port": config.source_port,
+            "dst_port": probe_ports(config),
+            "protocol": "tcp",
+            # 54 bytes: ip and tcp headers with no options and no payload, same for every probe.
+            "length": 54,
+            "tcp_flags": "S",
+            "label": "port_scan",
+        }
+    )

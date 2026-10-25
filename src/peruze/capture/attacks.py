@@ -94,3 +94,12 @@ def probe_frame(config: PortScanConfig, start: pd.Timestamp) -> pd.DataFrame:
             "label": "port_scan",
         }
     )
+
+
+def generate_port_scan(
+    baseline: pd.DataFrame, config: PortScanConfig | None = None
+) -> pd.DataFrame:
+    """Layer one port scan onto a baseline capture, at the offset the config names."""
+    config = config or PortScanConfig()
+    start = window_start(baseline, config.offset_s, config.duration_s)
+    return interleave(baseline, probe_frame(config, start))

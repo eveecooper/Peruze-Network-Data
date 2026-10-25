@@ -158,3 +158,12 @@ def test_a_source_port_below_the_ephemeral_range_is_rejected():
 def test_a_source_port_past_the_field_width_is_rejected():
     with pytest.raises(ValueError, match="ephemeral"):
         attacks.PortScanConfig(source_port=70000)
+
+
+def test_generate_port_scan_places_every_probe_inside_the_baseline():
+    config = attacks.PortScanConfig(offset_s=10.0, duration_s=5.0, port_count=20)
+    frame = attacks.generate_port_scan(BASELINE, config)
+
+    probes = frame[frame["label"] == "port_scan"]
+    assert len(probes) == config.port_count
+    assert probes["dst_port"].nunique() == config.port_count

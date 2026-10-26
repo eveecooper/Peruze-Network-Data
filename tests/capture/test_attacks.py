@@ -187,3 +187,21 @@ def test_a_ddos_with_no_attacking_hosts_is_rejected():
 def test_a_ddos_packet_count_below_one_per_host_is_rejected():
     with pytest.raises(ValueError, match="one packet each"):
         attacks.DDoSConfig(host_count=100, packet_count=50)
+
+
+def test_flood_sources_returns_one_address_per_attacking_host():
+    sources = attacks.flood_sources(attacks.DDoSConfig(host_count=50))
+
+    assert len(sources) == 50
+
+
+def test_flood_sources_are_distinct_within_the_documentation_range():
+    sources = attacks.flood_sources(attacks.DDoSConfig(host_count=200))
+
+    assert len(set(sources.tolist())) == 200
+
+
+def test_flood_sources_repeat_past_the_documentation_range():
+    sources = attacks.flood_sources(attacks.DDoSConfig(host_count=300, packet_count=300))
+
+    assert sources[0] == sources[254]

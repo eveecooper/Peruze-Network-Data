@@ -124,6 +124,14 @@ class DDoSConfig:
             )
 
 
+def flood_sources(config: DDoSConfig) -> np.ndarray:
+    """One attacking address per host, standing in for a botnet."""
+    # TEST-NET-3 per RFC 5737, 254 usable addresses. Past that the pool repeats, which
+    # matches a NAT'd botnet reusing a public address for several infected hosts.
+    offsets = np.arange(config.host_count) % 254 + 1
+    return np.array([f"203.0.113.{offset}" for offset in offsets])
+
+
 def generate_port_scan(
     baseline: pd.DataFrame, config: PortScanConfig | None = None
 ) -> pd.DataFrame:

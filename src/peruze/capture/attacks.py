@@ -96,6 +96,34 @@ def probe_frame(config: PortScanConfig, start: pd.Timestamp) -> pd.DataFrame:
     )
 
 
+@dataclass(frozen=True)
+class DDoSConfig:
+    """Many external hosts flooding one target port over a short, high volume burst."""
+
+    target: str = synthetic.DEFAULT_HOSTS[0]
+    target_port: int = 443
+    # a volumetric flood, not a handshake attempt, so tcp or udp covers the realistic cases.
+    protocol: str = "udp"
+    host_count: int = 200
+    packet_count: int = 20000
+    offset_s: float = 150.0
+    duration_s: float = 10.0
+
+    def __post_init__(self) -> None:
+        if self.protocol not in ("tcp", "udp"):
+            raise ValueError(f"protocol {self.protocol!r} must be tcp or udp")
+        if not 1 <= self.target_port <= 65535:
+            raise ValueError(f"target port {self.target_port} must be inside 1 to 65535")
+        if self.host_count < 1:
+            raise ValueError(f"host_count {self.host_count} must be at least 1")
+        # a botnet host that never sends a packet is not part of the flood.
+        if self.packet_count < self.host_count:
+            raise ValueError(
+                f"cannot spread {self.packet_count} packets across {self.host_count} hosts, "
+                "one packet each minimum"
+            )
+
+
 def generate_port_scan(
     baseline: pd.DataFrame, config: PortScanConfig | None = None
 ) -> pd.DataFrame:

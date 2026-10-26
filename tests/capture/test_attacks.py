@@ -167,3 +167,23 @@ def test_generate_port_scan_places_every_probe_inside_the_baseline():
     probes = frame[frame["label"] == "port_scan"]
     assert len(probes) == config.port_count
     assert probes["dst_port"].nunique() == config.port_count
+
+
+def test_a_ddos_protocol_outside_tcp_or_udp_is_rejected():
+    with pytest.raises(ValueError, match="tcp or udp"):
+        attacks.DDoSConfig(protocol="icmp")
+
+
+def test_a_ddos_target_port_past_the_field_width_is_rejected():
+    with pytest.raises(ValueError, match="target port"):
+        attacks.DDoSConfig(target_port=70000)
+
+
+def test_a_ddos_with_no_attacking_hosts_is_rejected():
+    with pytest.raises(ValueError, match="host_count"):
+        attacks.DDoSConfig(host_count=0)
+
+
+def test_a_ddos_packet_count_below_one_per_host_is_rejected():
+    with pytest.raises(ValueError, match="one packet each"):
+        attacks.DDoSConfig(host_count=100, packet_count=50)

@@ -256,3 +256,12 @@ def test_a_tcp_flood_carries_a_syn_flag_and_a_udp_flood_carries_none():
     assert (tcp_frame["tcp_flags"] == "S").all()
     assert udp_frame["tcp_flags"].isna().all()
     assert (tcp_frame["label"] == "ddos").all()
+
+
+def test_generate_ddos_burst_places_every_packet_inside_the_baseline():
+    config = attacks.DDoSConfig(offset_s=10.0, duration_s=5.0, host_count=10, packet_count=50)
+    frame = attacks.generate_ddos_burst(BASELINE, config)
+
+    flood = frame[frame["label"] == "ddos"]
+    assert len(flood) == config.packet_count
+    assert flood["src_ip"].nunique() == config.host_count

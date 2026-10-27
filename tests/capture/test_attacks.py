@@ -226,3 +226,33 @@ def test_the_last_flood_packet_lands_before_the_window_closes():
     times = attacks.flood_times(config, START)
 
     assert times.max() < START + pd.Timedelta(seconds=5.0)
+
+
+def test_a_flood_frame_addresses_every_packet_to_the_target():
+    config = attacks.DDoSConfig(host_count=4, packet_count=8, duration_s=1.0)
+    frame = attacks.flood_frame(config, START)
+
+    assert (frame["dst_ip"] == config.target).all()
+    assert (frame["dst_port"] == config.target_port).all()
+    assert (frame["protocol"] == config.protocol).all()
+
+
+def test_a_flood_frame_cycles_source_hosts_round_robin():
+    config = attacks.DDoSConfig(host_count=4, packet_count=8, duration_s=1.0)
+    frame = attacks.flood_frame(config, START)
+    sources = list(attacks.flood_sources(config))
+
+    assert list(frame["src_ip"])[:4] == sources
+    assert list(frame["src_ip"])[4:] == sources
+
+
+def test_a_tcp_flood_carries_a_syn_flag_and_a_udp_flood_carries_none():
+    tcp_config = attacks.DDoSConfig(protocol="tcp", host_count=2, packet_count=4, duration_s=1.0)
+    udp_config = attacks.DDoSConfig(protocol="udp", host_count=2, packet_count=4, duration_s=1.0)
+
+    tcp_frame = attacks.flood_frame(tcp_config, START)
+    udp_frame = attacks.flood_frame(udp_config, START)
+
+    assert (tcp_frame["tcp_flags"] == "S").all()
+    assert udp_frame["tcp_flags"].isna().all()
+    assert (tcp_frame["label"] == "ddos").all()

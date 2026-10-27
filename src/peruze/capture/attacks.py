@@ -139,6 +139,28 @@ def flood_times(config: DDoSConfig, start: pd.Timestamp) -> pd.DatetimeIndex:
     return start + pd.to_timedelta(offsets, unit="s")
 
 
+def flood_frame(config: DDoSConfig, start: pd.Timestamp) -> pd.DataFrame:
+    """One packet per flood arrival, source host cycling round robin across the botnet."""
+    sources = flood_sources(config)
+    hosts = np.arange(config.packet_count) % config.host_count
+    tcp = config.protocol == "tcp"
+    return schema.frame_from_columns(
+        {
+            "ts": flood_times(config, start),
+            "src_ip": sources[hosts],
+            "dst_ip": config.target,
+            # each host keeps one ephemeral port for the burst, same as a single real connection would.
+            "src_port": 49152 + hosts % (65536 - 49152),
+            "dst_port": config.target_port,
+            "protocol": config.protocol,
+            # 54 bytes: a bare SYN, same header size as the port scan probes. 28 bytes: ip plus udp headers, no payload.
+            "length": 54 if tcp else 28,
+            "tcp_flags": "S" if tcp else pd.NA,
+            "label": "ddos",
+        }
+    )
+
+
 def generate_port_scan(
     baseline: pd.DataFrame, config: PortScanConfig | None = None
 ) -> pd.DataFrame:

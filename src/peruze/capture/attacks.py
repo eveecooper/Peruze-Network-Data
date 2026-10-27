@@ -168,3 +168,10 @@ def generate_port_scan(
     config = config or PortScanConfig()
     start = window_start(baseline, config.offset_s, config.duration_s)
     return interleave(baseline, probe_frame(config, start))
+
+
+def generate_ddos_burst(baseline: pd.DataFrame, config: DDoSConfig | None = None) -> pd.DataFrame:
+    """Layer one DDoS burst onto a baseline capture, at the offset the config names."""
+    config = config or DDoSConfig()
+    start = window_start(baseline, config.offset_s, config.duration_s)
+    return interleave(baseline, flood_frame(config, start))

@@ -132,6 +132,13 @@ def flood_sources(config: DDoSConfig) -> np.ndarray:
     return np.array([f"203.0.113.{offset}" for offset in offsets])
 
 
+def flood_times(config: DDoSConfig, start: pd.Timestamp) -> pd.DatetimeIndex:
+    """Packet arrival times across the flood window."""
+    # drop the right edge: gaps stay duration / packet_count and the last packet stays inside the window.
+    offsets = np.linspace(0.0, config.duration_s, config.packet_count, endpoint=False)
+    return start + pd.to_timedelta(offsets, unit="s")
+
+
 def generate_port_scan(
     baseline: pd.DataFrame, config: PortScanConfig | None = None
 ) -> pd.DataFrame:

@@ -205,3 +205,24 @@ def test_flood_sources_repeat_past_the_documentation_range():
     sources = attacks.flood_sources(attacks.DDoSConfig(host_count=300, packet_count=300))
 
     assert sources[0] == sources[254]
+
+
+def test_flood_times_sends_one_arrival_per_packet():
+    config = attacks.DDoSConfig(host_count=10, packet_count=500, duration_s=5.0)
+
+    assert len(attacks.flood_times(config, START)) == 500
+
+
+def test_flood_times_run_on_an_even_grid_from_the_window_start():
+    config = attacks.DDoSConfig(host_count=4, packet_count=4, duration_s=8.0)
+    times = attacks.flood_times(config, START)
+
+    assert times[0] == START
+    assert list(times[1:] - times[:-1]) == [pd.Timedelta(seconds=2.0)] * 3
+
+
+def test_the_last_flood_packet_lands_before_the_window_closes():
+    config = attacks.DDoSConfig(host_count=10, packet_count=10, duration_s=5.0)
+    times = attacks.flood_times(config, START)
+
+    assert times.max() < START + pd.Timedelta(seconds=5.0)

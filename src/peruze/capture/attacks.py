@@ -43,7 +43,7 @@ class PortScanConfig:
     scanner: str = "198.51.100.66"
     # a host the baseline already talks to, or per host rollups show an address with nothing but attack traffic.
     target: str = synthetic.DEFAULT_HOSTS[0]
-    # Inclusive bounds, matching the port list a scanner is handed.
+    # inclusive bounds, matching the port list a scanner is handed.
     ports: tuple[int, int] = (1, 1024)
     port_count: int = 400
     # one port for the whole sweep, so probes differ only in destination.

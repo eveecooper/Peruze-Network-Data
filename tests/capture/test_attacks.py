@@ -265,3 +265,23 @@ def test_generate_ddos_burst_places_every_packet_inside_the_baseline():
     flood = frame[frame["label"] == "ddos"]
     assert len(flood) == config.packet_count
     assert flood["src_ip"].nunique() == config.host_count
+
+
+def test_a_beacon_c2_port_past_the_field_width_is_rejected():
+    with pytest.raises(ValueError, match="c2 port"):
+        attacks.BeaconConfig(c2_port=70000)
+
+
+def test_a_beacon_with_a_non_positive_interval_is_rejected():
+    with pytest.raises(ValueError, match="interval_s"):
+        attacks.BeaconConfig(interval_s=0.0)
+
+
+def test_a_beacon_jitter_at_or_above_the_interval_is_rejected():
+    with pytest.raises(ValueError, match="jitter_s"):
+        attacks.BeaconConfig(interval_s=30.0, jitter_s=30.0)
+
+
+def test_a_beacon_with_no_checkins_is_rejected():
+    with pytest.raises(ValueError, match="beacon_count"):
+        attacks.BeaconConfig(beacon_count=0)

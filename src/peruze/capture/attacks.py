@@ -170,6 +170,34 @@ def generate_port_scan(
     return interleave(baseline, probe_frame(config, start))
 
 
+@dataclass(frozen=True)
+class BeaconConfig:
+    """One internal host checking in with an external command and control address on a fixed interval."""
+
+    source: str = synthetic.DEFAULT_HOSTS[0]
+    # TEST-NET-1 per RFC 5737, kept distinct from the scanner and botnet ranges elsewhere in this module.
+    c2: str = "192.0.2.10"
+    c2_port: int = 443
+    interval_s: float = 60.0
+    # random spread around the interval, so checkins do not land on an exact, suspiciously regular grid.
+    jitter_s: float = 5.0
+    beacon_count: int = 20
+    offset_s: float = 60.0
+
+    def __post_init__(self) -> None:
+        if not 1 <= self.c2_port <= 65535:
+            raise ValueError(f"c2 port {self.c2_port} must be inside 1 to 65535")
+        if self.interval_s <= 0:
+            raise ValueError(f"interval_s {self.interval_s} must be positive")
+        # jitter at or past the interval could push a checkin ahead of the one before it.
+        if not 0 <= self.jitter_s < self.interval_s:
+            raise ValueError(
+                f"jitter_s {self.jitter_s} must be smaller than interval_s {self.interval_s}"
+            )
+        if self.beacon_count < 1:
+            raise ValueError(f"beacon_count {self.beacon_count} must be at least 1")
+
+
 def generate_ddos_burst(baseline: pd.DataFrame, config: DDoSConfig | None = None) -> pd.DataFrame:
     """Layer one DDoS burst onto a baseline capture, at the offset the config names."""
     config = config or DDoSConfig()

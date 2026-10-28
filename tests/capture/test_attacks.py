@@ -285,3 +285,27 @@ def test_a_beacon_jitter_at_or_above_the_interval_is_rejected():
 def test_a_beacon_with_no_checkins_is_rejected():
     with pytest.raises(ValueError, match="beacon_count"):
         attacks.BeaconConfig(beacon_count=0)
+
+
+def test_beacon_times_sends_one_arrival_per_checkin():
+    config = attacks.BeaconConfig(beacon_count=15)
+
+    assert len(attacks.beacon_times(config, START)) == 15
+
+
+def test_beacon_times_are_deterministic_for_a_given_seed():
+    config = attacks.BeaconConfig(beacon_count=10, seed=7)
+
+    first = attacks.beacon_times(config, START)
+    second = attacks.beacon_times(config, START)
+
+    assert list(first) == list(second)
+
+
+def test_beacon_times_stay_within_jitter_of_the_regular_grid():
+    config = attacks.BeaconConfig(beacon_count=10, interval_s=60.0, jitter_s=5.0)
+    times = attacks.beacon_times(config, START)
+
+    for i, checkin in enumerate(times):
+        grid_point = START + pd.Timedelta(seconds=i * config.interval_s)
+        assert abs((checkin - grid_point).total_seconds()) <= config.jitter_s

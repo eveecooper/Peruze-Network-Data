@@ -183,6 +183,8 @@ class BeaconConfig:
     jitter_s: float = 5.0
     beacon_count: int = 20
     offset_s: float = 60.0
+    # jitter needs a random draw; a fixed seed keeps the capture identical on every run.
+    seed: int = 0
 
     def __post_init__(self) -> None:
         if not 1 <= self.c2_port <= 65535:
@@ -196,6 +198,16 @@ class BeaconConfig:
             )
         if self.beacon_count < 1:
             raise ValueError(f"beacon_count {self.beacon_count} must be at least 1")
+
+
+def beacon_times(config: BeaconConfig, start: pd.Timestamp) -> pd.DatetimeIndex:
+    """Checkin arrival times, evenly spaced by the interval and perturbed by jitter."""
+    rng = np.random.default_rng(config.seed)
+    grid = np.arange(config.beacon_count) * config.interval_s
+    jitter = rng.uniform(-config.jitter_s, config.jitter_s, size=config.beacon_count)
+    # jitter cannot push a checkin before the window opens.
+    offsets = np.clip(grid + jitter, 0.0, None)
+    return start + pd.to_timedelta(offsets, unit="s")
 
 
 def generate_ddos_burst(baseline: pd.DataFrame, config: DDoSConfig | None = None) -> pd.DataFrame:

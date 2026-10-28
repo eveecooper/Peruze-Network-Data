@@ -309,3 +309,25 @@ def test_beacon_times_stay_within_jitter_of_the_regular_grid():
     for i, checkin in enumerate(times):
         grid_point = START + pd.Timedelta(seconds=i * config.interval_s)
         assert abs((checkin - grid_point).total_seconds()) <= config.jitter_s
+
+
+def test_a_beacon_source_port_below_the_ephemeral_range_is_rejected():
+    with pytest.raises(ValueError, match="ephemeral"):
+        attacks.BeaconConfig(source_port=1024)
+
+
+def test_a_beacon_frame_addresses_the_source_to_the_c2():
+    config = attacks.BeaconConfig(beacon_count=5)
+    frame = attacks.beacon_frame(config, START)
+
+    assert (frame["src_ip"] == config.source).all()
+    assert (frame["dst_ip"] == config.c2).all()
+    assert (frame["dst_port"] == config.c2_port).all()
+    assert (frame["label"] == "beacon").all()
+
+
+def test_a_beacon_frame_carries_one_row_per_checkin():
+    config = attacks.BeaconConfig(beacon_count=5)
+    frame = attacks.beacon_frame(config, START)
+
+    assert len(frame) == config.beacon_count

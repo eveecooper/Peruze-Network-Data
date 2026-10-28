@@ -185,6 +185,8 @@ class BeaconConfig:
     offset_s: float = 60.0
     # jitter needs a random draw; a fixed seed keeps the capture identical on every run.
     seed: int = 0
+    # one port for every checkin, so beacons differ only in arrival time.
+    source_port: int = 51000
 
     def __post_init__(self) -> None:
         if not 1 <= self.c2_port <= 65535:
@@ -198,6 +200,9 @@ class BeaconConfig:
             )
         if self.beacon_count < 1:
             raise ValueError(f"beacon_count {self.beacon_count} must be at least 1")
+        # beacons bind an ephemeral port, same range a port scanner's source port must fall in.
+        if not 49152 <= self.source_port <= 65535:
+            raise ValueError(f"source port {self.source_port} is not ephemeral, 49152 to 65535")
 
 
 def beacon_times(config: BeaconConfig, start: pd.Timestamp) -> pd.DatetimeIndex:
@@ -208,6 +213,24 @@ def beacon_times(config: BeaconConfig, start: pd.Timestamp) -> pd.DatetimeIndex:
     # jitter cannot push a checkin before the window opens.
     offsets = np.clip(grid + jitter, 0.0, None)
     return start + pd.to_timedelta(offsets, unit="s")
+
+
+def beacon_frame(config: BeaconConfig, start: pd.Timestamp) -> pd.DataFrame:
+    """One outbound packet per checkin, addressed to the command and control host."""
+    return schema.frame_from_columns(
+        {
+            "ts": beacon_times(config, start),
+            "src_ip": config.source,
+            "dst_ip": config.c2,
+            "src_port": config.source_port,
+            "dst_port": config.c2_port,
+            "protocol": "tcp",
+            # 66 bytes: a small request with no body, consistent across every checkin.
+            "length": 66,
+            "tcp_flags": "S",
+            "label": "beacon",
+        }
+    )
 
 
 def generate_ddos_burst(baseline: pd.DataFrame, config: DDoSConfig | None = None) -> pd.DataFrame:
